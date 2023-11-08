@@ -1,4 +1,4 @@
-# Windows - AMSI Bypass
+# AMSI Bypass
 
 ## Summary
 
