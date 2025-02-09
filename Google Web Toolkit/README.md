@@ -6,17 +6,17 @@
 ## Summary
 
 * [Tools](#tools)
-* [Enumerate](#enumerate)
+* [Methodology](#methodology)
 * [References](#references)
 
 
 ## Tools
 
-* [FSecureLABS/GWTMap](https://github.com/FSecureLABS/GWTMap)
-* [GDSSecurity/GWT-Penetration-Testing-Toolset](https://github.com/GDSSecurity/GWT-Penetration-Testing-Toolset)
+* [FSecureLABS/GWTMap](https://github.com/FSecureLABS/GWTMap) - GWTMap is a tool to help map the attack surface of Google Web Toolkit (GWT) based applications. 
+* [GDSSecurity/GWT-Penetration-Testing-Toolset](https://github.com/GDSSecurity/GWT-Penetration-Testing-Toolset) - A set of tools made to assist in penetration testing GWT applications. 
 
 
-## Enumerate
+## Methodology
 
 * Enumerate the methods of a remote application via it's bootstrap file and create a local backup of the code (selects permutation at random):
     ```ps1
@@ -51,5 +51,5 @@
 
 ## References
 
-* [From Serialized to Shell :: Exploiting Google Web Toolkit with EL Injection - May 22, 2017](https://srcincite.io/blog/2017/05/22/from-serialized-to-shell-auditing-google-web-toolkit-with-el-injection.html)
-* [Hacking a Google Web Toolkit application - April 22, 2021 - thehackerish](https://thehackerish.com/hacking-a-google-web-toolkit-application/)
+- [From Serialized to Shell :: Exploiting Google Web Toolkit with EL Injection - Stevent Seeley - May 22, 2017](https://srcincite.io/blog/2017/05/22/from-serialized-to-shell-auditing-google-web-toolkit-with-el-injection.html)
+- [Hacking a Google Web Toolkit application - thehackerish - April 22, 2021](https://thehackerish.com/hacking-a-google-web-toolkit-application/)

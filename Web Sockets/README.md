@@ -1,23 +1,26 @@
 # Web Sockets
 
-> The WebSocket protocol allows a bidirectional and full-duplex communication between a client and a server
+> WebSocket is a communication protocol that provides full-duplex communication channels over a single, long-lived connection. This enables real-time, bi-directional communication between clients (typically web browsers) and servers through a persistent connection. WebSockets are commonly used for web applications that require frequent, low-latency updates, such as live chat applications, online gaming, real-time notifications, and financial trading platforms.
+
 
 ## Summary
 
 * [Tools](#tools)
-* [Exploit](#exploit)
-  * [Using wsrepl](#using-wsrepl)
-  * [Using ws-harness.py](#using-ws-harness-py)
+* [Methodology](#methodology)
+    * [Using wsrepl](#using-wsrepl)
+    * [Using ws-harness.py](#using-ws-harness-py)
 * [Cross-Site WebSocket Hijacking (CSWSH)](#cross-site-websocket-hijacking-cswsh)
 * [Labs](#labs)
 * [References](#references)
+
 
 ## Tools
 
 * [doyensec/wsrepl](https://github.com/doyensec/wsrepl) - WebSocket REPL for pentesters
 * [mfowl/ws-harness.py](https://gist.githubusercontent.com/mfowl/ae5bc17f986d4fcc2023738127b06138/raw/e8e82467ade45998d46cef355fd9b57182c3e269/ws.harness.py)
 
-## Exploit
+
+## Methodology
 
 ### Using wsrepl
 
@@ -82,7 +85,10 @@ python ws-harness.py -u "ws://dvws.local:8080/authenticate-user" -m ./message.tx
 The content of the message should contains the **[FUZZ]** keyword.
 
 ```json
-{"auth_user":"dGVzda==", "auth_pass":"[FUZZ]"}
+{
+    "auth_user":"dGVzda==",
+    "auth_pass":"[FUZZ]"
+}
 ```
 
 Then you can use any tools against the newly created web service, working as a proxy and tampering on the fly the content of message sent thru the websocket.
@@ -123,13 +129,16 @@ in order to add this header.
 
 ## Labs
 
-* [PortSwigger Labs for Web Sockets](https://portswigger.net/web-security/all-labs#http-request-smuggling)
+* [PortSwigger - Manipulating WebSocket messages to exploit vulnerabilities](https://portswigger.net/web-security/websockets/lab-manipulating-messages-to-exploit-vulnerabilities)
+* [PortSwigger - Cross-site WebSocket hijacking](https://portswigger.net/web-security/websockets/cross-site-websocket-hijacking/lab)
+* [PortSwigger - Manipulating the WebSocket handshake to exploit vulnerabilities](https://portswigger.net/web-security/websockets/lab-manipulating-handshake-to-exploit-vulnerabilities)
+* [Root Me - Web Socket - 0 protection](https://www.root-me.org/en/Challenges/Web-Client/Web-Socket-0-protection)
 
 
 ## References
 
-- [HACKING WEB SOCKETS: ALL WEB PENTEST TOOLS WELCOMED by Michael Fowl | Mar 5, 2019](https://web.archive.org/web/20190306170840/https://www.vdalabs.com/2019/03/05/hacking-web-sockets-all-web-pentest-tools-welcomed/)
-- [Hacking with WebSockets - Qualys - Mike Shema, Sergey Shekyan, Vaagn Toukharian](https://media.blackhat.com/bh-us-12/Briefings/Shekyan/BH_US_12_Shekyan_Toukharian_Hacking_Websocket_Slides.pdf)
-- [Mini WebSocket CTF - January 27, 2020 - Snowscan](https://snowscan.io/bbsctf-evilconneck/#)
-- [Hacktricks - CSWSH](https://book.hacktricks.xyz/pentesting-web/cross-site-websocket-hijacking-cswsh)
-- [Streamlining Websocket Pentesting with wsrepl - Andrez Konstantinov - 18 Jul 2023](https://blog.doyensec.com/2023/07/18/streamlining-websocket-pentesting-with-wsrepl.html)
+- [Hacking Web Sockets: All Web Pentest Tools Welcomed - Michael Fowl - March 5, 2019](https://web.archive.org/web/20190306170840/https://www.vdalabs.com/2019/03/05/hacking-web-sockets-all-web-pentest-tools-welcomed/)
+- [Hacking with WebSockets - Mike Shema, Sergey Shekyan, Vaagn Toukharian - September 20, 2012](https://media.blackhat.com/bh-us-12/Briefings/Shekyan/BH_US_12_Shekyan_Toukharian_Hacking_Websocket_Slides.pdf)
+- [Mini WebSocket CTF - Snowscan - January 27, 2020](https://snowscan.io/bbsctf-evilconneck/#)
+- [Streamlining Websocket Pentesting with wsrepl - Andrez Konstantinov - July 18, 2023](https://blog.doyensec.com/2023/07/18/streamlining-websocket-pentesting-with-wsrepl.html)
+- [WebSocket Attacks - HackTricks - July 19, 2024](https://book.hacktricks.xyz/pentesting-web/websocket-attacks)

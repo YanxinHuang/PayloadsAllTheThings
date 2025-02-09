@@ -2,14 +2,16 @@
 
 > PHP is a loosely typed language, which means it tries to predict the programmer's intent and automatically converts variables to different types whenever it seems necessary. For example, a string containing only numbers can be treated as an integer or a float. However, this automatic conversion (or type juggling) can lead to unexpected results, especially when comparing variables using the '==' operator, which only checks for value equality (loose comparison), not type and value equality (strict comparison).
 
+
 ## Summary
 
 * [Loose Comparison](#loose-comparison)
-	* [True statements](#true-statements)
-	* [NULL statements](#null-statements)
+	* [True Statements](#true-statements)
+	* [NULL Statements](#null-statements)
 	* [Loose Comparison](#loose-comparison)
 * [Magic Hashes](#magic-hashes)
-* [Exploit](#exploit)
+* [Methodology](#methodology)
+* [Labs](#labs)
 * [References](#references)
 
 
@@ -20,7 +22,7 @@
 - **Loose** comparison: using `== or !=` : both variables have "the same value".
 - **Strict** comparison: using `=== or !==` : both variables have "the same type and the same value".
 
-### True statements
+### True Statements
 
 | Statement                         | Output |
 | --------------------------------- |:---------------:|
@@ -28,7 +30,7 @@
 | `'0xABCdef' == ' 0xABCdef'`       | true (PHP 5.0) / false (PHP 7.0) |
 | `'0xABCdef' == '     0xABCdef'`   | true (PHP 5.0) / false (PHP 7.0) |
 | `'0x01'     == 1`       		    | true (PHP 5.0) / false (PHP 7.0) |
-| `'0x1234Ab' == '1193131'`         | true |
+| `'0x1234Ab' == '1193131'`         | true (PHP 5.0) / false (PHP 7.0) |
 | `'123'  == 123`                   | true |
 | `'123a' == 123`                   | true |
 | `'abc'  == 0`                     | true |
@@ -42,7 +44,8 @@
 
 ![LooseTypeComparison](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Type%20Juggling/Images/table_representing_behavior_of_PHP_with_loose_type_comparisons.png?raw=true)
 
-Loose Type Comparisons occurs in many languages:
+Loose Type comparisons occurs in many languages:
+
 * [MariaDB](https://github.com/Hakumarachi/Loose-Compare-Tables/tree/master/results/Mariadb)
 * [MySQL](https://github.com/Hakumarachi/Loose-Compare-Tables/tree/master/results/Mysql)
 * [NodeJS](https://github.com/Hakumarachi/Loose-Compare-Tables/tree/master/results/NodeJS)
@@ -53,7 +56,7 @@ Loose Type Comparisons occurs in many languages:
 * [SQLite](https://github.com/Hakumarachi/Loose-Compare-Tables/tree/master/results/SQLite/2.6.0)
 
 
-### NULL statements
+### NULL Statements
 
 | Function | Statement                  | Output |
 | -------- | -------------------------- |:---------------:|
@@ -88,7 +91,7 @@ var_dump(sha1('aaO8zKZF') == sha1('aa3OFF9m'));
 ?>
 ```
 
-## Exploit
+## Methodology
 
 The vulnerability in the following code lies in the use of a loose comparison (!=) to validate the $cookie['hmac'] against the calculated `$hash`.
 
@@ -139,10 +142,16 @@ The exploitation phase is the following:
 4. In this case we assumed the key was a null string : `$key = '';`
 
 
+## Labs
+
+* [Root Me - PHP - Type Juggling](https://www.root-me.org/en/Challenges/Web-Server/PHP-type-juggling)
+* [Root Me - PHP - Loose Comparison](https://www.root-me.org/en/Challenges/Web-Server/PHP-Loose-Comparison)
+
+
 ## References
 
-* [Writing Exploits For Exotic Bug Classes: PHP Type Juggling By Tyler Borland](http://turbochaos.blogspot.com/2013/08/exploiting-exotic-bugs-php-type-juggling.html)
-* [Magic Hashes - WhiteHatSec](https://www.whitehatsec.com/blog/magic-hashes/)
-* [PHP Magic Tricks: Type Juggling](https://owasp.org/www-pdf-archive/PHPMagicTricks-TypeJuggling.pdf)
-* [spaze/hashes - Magic hashes – PHP hash "collisions"](https://github.com/spaze/hashes)
-* [(Super) Magic Hashes - Mon 07 October 2019 - myst404 (@myst404_)](https://offsec.almond.consulting/super-magic-hash.html)
+- [(Super) Magic Hashes - myst404 (@myst404_) - October 7, 2019](https://offsec.almond.consulting/super-magic-hash.html)
+- [Magic Hashes - Robert Hansen - May 11, 2015](http://web.archive.org/web/20160722013412/https://www.whitehatsec.com/blog/magic-hashes/)
+- [Magic hashes – PHP hash "collisions" - Michal Špaček (@spaze) - May 6, 2015](https://github.com/spaze/hashes)
+- [PHP Magic Tricks: Type Juggling - Chris Smith (@chrismsnz) - August 18, 2020](http://web.archive.org/web/20200818131633/https://owasp.org/www-pdf-archive/PHPMagicTricks-TypeJuggling.pdf)
+- [Writing Exploits For Exotic Bug Classes: PHP Type Juggling - Tyler Borland (TurboBorland) - August 17, 2013](http://turbochaos.blogspot.com/2013/08/exploiting-exotic-bugs-php-type-juggling.html)

